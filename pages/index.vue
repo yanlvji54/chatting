@@ -1,50 +1,50 @@
 <template>
-  <div>
-    <a-card title="生成服务">
-      <a-row :gutter="16">
-        <a-col :span="12">
-          <a-statistic title="开启时间" :value="startTime" />
-        </a-col>
-        <a-col :span="12">
-          <a-statistic title="时长" :value="duration" />
-        </a-col>
-      </a-row>
+  <div class="container">
+    <div class="left-panel">
+      <a-card title="生成服务">
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-statistic title="开启时间" :value="startTime" />
+          </a-col>
+          <a-col :span="12">
+            <a-statistic title="时长" :value="duration" />
+          </a-col>
+        </a-row>
 
-      <a-button type="primary" @click="generateLinks" style="margin-top: 16px"> 一键生成双链接 </a-button>
+        <a-button type="primary" @click="generateLinks" style="margin-top: 16px"> 一键生成双链接 </a-button>
 
-      <a-row :gutter="16" style="margin-top: 16px">
-        <a-col :span="12">
-          <a-statistic title="用户链接" :value="userLink" />
-          <a-button type="primary" @click="copyToClipboard(userLink)" style="margin-left: 8px">复制</a-button>
-        </a-col>
-        <a-col :span="12">
-          <a-statistic title="倾听师链接" :value="listenerLink" />
-          <a-button type="primary" @click="copyToClipboard(listenerLink)" style="margin-left: 8px">复制</a-button>
-        </a-col>
-      </a-row>
-    </a-card>
-
-    <a-card title="历史记录" style="margin-top: 16px">
-      <a-table :columns="columns" :data-source="historyData" :pagination="false" :rowKey="record => record.id">
-        <template v-slot:bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
-            <a-tag :color="record.status === '已使用' ? 'green' : 'red'">
-              {{ record.status }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.key === 'audioLink'">
-            <a :href="record.audioLink" target="_blank">查看录音</a>
-          </template>
-          <template v-else-if="column.key === 'actions'">
-            <a-button type="primary" @click="downloadAudio(record.audioLink)" style="margin-right: 8px">下载</a-button>
-            <a-button type="danger" @click="deleteItem(record.index, historyData)">删除</a-button>
-          </template>
-          <template v-else>
-            {{ record[column.key] }}
-          </template>
-        </template>
-      </a-table>
-    </a-card>
+        <a-row :gutter="16" style="margin-top: 16px; display: flex; flex-direction: column;">
+          <a-col :span="12">
+            <a-statistic title="用户链接" :value="userLink" />
+            <a-button type="primary" @click="copyToClipboard(userLink)" style="margin-left: 8px">复制</a-button>
+          </a-col>
+          <a-col :span="12">
+            <a-statistic title="倾听师链接" :value="listenerLink" />
+            <a-button type="primary" @click="copyToClipboard(listenerLink)" style="margin-left: 8px">复制</a-button>
+          </a-col>
+        </a-row>
+      </a-card>
+    </div>
+    <div class="right-panel">
+      <a-card title="历史记录" style="margin-top: 16px">
+        <a-table :columns="columns" :data-source="historyData" :pagination="false" :rowKey="record => record.id">
+            <span slot="status" slot-scope="text, record">
+              <a-tag :color="record.status === '已使用' ? 'green' : 'red'">
+                {{ record.status }}
+              </a-tag>
+            </span>
+            <span slot="audioLink" slot-scope="text, record">
+              <a :href="record.audioLink" target="_blank">查看录音</a>
+            </span>
+            <span slot="actions" slot-scope="text, record">
+              <a-button type="danger" @click="deleteItem(record.index, historyData)">删除</a-button>
+            </span>
+            <span slot="default" slot-scope="text, record">
+              {{ record[column.key] }}
+            </span>
+        </a-table>
+      </a-card>
+    </div>
   </div>
 </template>
 
@@ -117,28 +117,31 @@ export default {
       {
         title: '结束时间',
         dataIndex: 'endTime',
-        key: 'endTime'
+        key: 'endTime',
       },
       {
         title: '实际时长',
         dataIndex: 'duration',
-        key: 'duration'
+        key: 'duration',
       },
       {
         title: '使用状态',
         dataIndex: 'status',
-        key: 'status'
+        key: 'status',
+        scopedSlots: { customRender: 'status' },
       },
       {
         title: '录音链接',
         dataIndex: 'audioLink',
-        key: 'audioLink'
+        key: 'audioLink',
+        scopedSlots: { customRender: 'audioLink' },
       },
       {
         title: '操作',
         key: 'actions',
         fixed: 'right',
-        width: 100
+        width: 100,
+        scopedSlots: { customRender: 'actions' },
       }
     ])
 
@@ -198,5 +201,16 @@ export default {
 </script>
 
 <style scoped>
-/* 你可以在这里添加自定义样式 */
+.container {
+  display: flex;
+}
+
+.left-panel {
+  width: 500px; /* 固定宽度 */
+  margin-right: 16px; /* 间距 */
+}
+
+.right-panel {
+  flex: 1; /* 占据剩余空间 */
+}
 </style>
