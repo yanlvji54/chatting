@@ -15,20 +15,30 @@
       <a-row :gutter="16" style="margin-top: 16px">
         <a-col :span="12">
           <a-statistic title="用户链接" :value="userLink" />
+          <a-button type="primary" @click="copyToClipboard(userLink)" style="margin-left: 8px">复制</a-button>
         </a-col>
         <a-col :span="12">
           <a-statistic title="倾听师链接" :value="listenerLink" />
+          <a-button type="primary" @click="copyToClipboard(listenerLink)" style="margin-left: 8px">复制</a-button>
         </a-col>
       </a-row>
     </a-card>
 
     <a-card title="历史记录" style="margin-top: 16px">
       <a-table :columns="columns" :data-source="historyData" :pagination="false">
-        <template #bodyCell="{ column, record }">
+        <template #cell="{ column, record }">
+          {{ column }}
           <template v-if="column.key === 'status'">
             <a-tag :color="record.status === '已使用' ? 'green' : 'red'">
               {{ record.status }}
             </a-tag>
+          </template>
+          <template v-if="column.key === 'audioLink'">
+            <a :href="record.audioLink" target="_blank">查看录音</a>
+          </template>
+          <template v-if="column.key === 'actions'">
+            <a-button type="primary" @click="downloadAudio(record.audioLink)" style="margin-right: 8px">下载</a-button>
+            <a-button type="danger" @click="deleteItem(record.index, historyData)">删除</a-button>
           </template>
         </template>
       </a-table>
@@ -37,8 +47,12 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Card, Row, Col, Statistic, Button, Table, Tag } from 'ant-design-vue'
+import dayjs from 'dayjs'
+import duration from 'dayjs/plugin/duration'
+
+dayjs.extend(duration)
 
 export default {
   components: {
@@ -52,52 +66,30 @@ export default {
   },
   setup() {
     const startTime = ref('2025年01月20日 18:00')
-    const duration = ref('00:00:00')
-    const userLink = ref('--- 6')
-    const listenerLink = ref('--- 6')
+    const userLink = ref('---')
+    const listenerLink = ref('---')
 
-    const historyData = ref([
-      {
-        key: '1',
-        userLink: 'http://godan001user.cn',
-        listenerName: '小张',
-        listenerLink: 'http://godan001licener.cn',
-        startTime: '2025.01.20 18:00',
-        endTime: '2025.01.20 18:20',
-        duration: '00:20:00',
-        status: '已使用'
-      },
-      {
-        key: '2',
-        userLink: 'http://godan002user.cn',
-        listenerName: '小张',
-        listenerLink: 'http://godan002licener.cn',
-        startTime: '2025.01.21 18:00',
-        endTime: '2025.01.21 18:20',
-        duration: '00:00:00',
-        status: '未使用'
-      },
-      {
-        key: '3',
-        userLink: 'http://godan003user.cn',
-        listenerName: '小张',
-        listenerLink: 'http://godan003licener.cn',
-        startTime: '2025.01.22 18:00',
-        endTime: '2025.01.22 18:20',
-        duration: '00:17:32',
-        status: '已使用'
-      },
-      {
-        key: '4',
-        userLink: 'http://godan004user.cn',
-        listenerName: '小张',
-        listenerLink: 'http://godan004licener.cn',
-        startTime: '2025.01.23 18:00',
-        endTime: '2025.01.23 18:20',
-        duration: '00:17:32',
-        status: '已使用'
-      }
-    ])
+    const calculateDuration = () => {
+      const now = dayjs()
+      const targetDate = dayjs('2025-01-20')
+      const diff = now.diff(targetDate)
+
+      const durationObj = dayjs.duration(diff)
+
+      return `${durationObj.days()}天${durationObj.hours()}小时`
+    }
+
+    const duration = computed(() => calculateDuration())
+
+    // 从 /api/record/get 获取历史记录
+    const historyData = ref([])
+    const getHistoryData = async () => {
+      const res = await fetch('/api/record/get')
+      const data = await res.json()
+      historyData.value = data.data
+    }
+
+    getHistoryData()
 
     const columns = ref([
       {
@@ -134,13 +126,57 @@ export default {
         title: '使用状态',
         dataIndex: 'status',
         key: 'status'
+      },
+      {
+        title: '录音链接',
+        dataIndex: 'audioLink',
+        key: 'audioLink'
+      },
+      {
+        title: '操作',
+        key: 'actions',
+        fixed: 'right',
+        width: 100
       }
     ])
 
-    const generateLinks = () => {
-      // 这里可以添加生成链接的逻辑
-      userLink.value = 'http://newuserlink.cn'
-      listenerLink.value = 'http://newlistenerlink.cn'
+    const generateLinks = async () => {
+      // 使用 /api/record/generateLinks post方法生成链接
+      const res = await fetch('/api/record/generateLinks', {
+        method: 'POST',
+        body: JSON.stringify({ userId: '123', listenerId: '456' })
+      })
+      const data = await res.json()
+      userLink.value = data.userLink
+      listenerLink.value = data.listenerLink
+
+      getHistoryData()
+    }
+
+    const copyToClipboard = text => {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          console.log('复制成功:', text)
+        })
+        .catch(err => {
+          console.error('复制失败:', err)
+        })
+    }
+
+    const downloadAudio = link => {
+      // 创建一个隐藏的链接来下载文件
+      const a = document.createElement('a')
+      a.href = link
+      a.download = link.split('/').pop() // 使用文件名作为下载名
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+
+    const deleteItem = (index, dataArray) => {
+      // 删除指定索引的项目
+      dataArray.splice(index, 1)
     }
 
     return {
@@ -150,7 +186,10 @@ export default {
       listenerLink,
       historyData,
       columns,
-      generateLinks
+      generateLinks,
+      copyToClipboard,
+      downloadAudio,
+      deleteItem
     }
   }
 }

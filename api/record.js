@@ -46,7 +46,7 @@ async function downloadRecord(req, res) {
     const record = await Record.findById(id)
     if (record) {
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify(record))
+      res.end(JSON.stringify({ message: 'Record downloaded', record }))
     } else {
       res.writeHead(404, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ message: 'Record not found' }))
@@ -74,17 +74,48 @@ async function generateLinks(req, res) {
 
     // 创建新的记录
     const newRecord = new Record({
-      userId,
-      listenerId,
-      userLink,
-      listenerLink
-      // 其他字段可以根据需要添加
+      id: randomHash,
+      userId: userId,
+      content: '',
+      createdAt: new Date(),
+      userLink: userLink,
+      listenerName: '',
+      listenerId: listenerId,
+      listenerLink: listenerLink,
+      startTime: '',
+      endTime: '',
+      duration: '',
+      status: '未使用'
     })
     await newRecord.save()
 
     // 返回生成的链接
     res.writeHead(201, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ userLink, listenerLink }))
+    res.end(JSON.stringify({ message: 'Links generated', userLink, listenerLink }))
+  } catch (err) {
+    res.writeHead(400, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: err.message }))
+  }
+}
+
+async function getRecord(req, res) {
+  try {
+    const { id } = req.query
+    const record = await Record.findById(id)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(record))
+  } catch (err) {
+    res.writeHead(400, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: err.message }))
+  }
+}
+
+async function getAllRecord(req, res) {
+  console.log('getAllRecord')
+  try {
+    const records = await Record.find()
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ message: 'Records fetched', data: records }))
   } catch (err) {
     res.writeHead(400, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ error: err.message }))
@@ -92,24 +123,18 @@ async function generateLinks(req, res) {
 }
 
 module.exports = async (req, res, next) => {
-  if (req.method === 'POST' && req.url === '/api/record/add') {
+  console.log(req.url, req.method)
+  if (req.method === 'POST' && req.url === '/add') {
     await addRecord(req, res)
-  } else if (req.method === 'POST' && req.url === '/api/record/generateLinks') {
+  } else if (req.method === 'POST' && req.url === '/generateLinks') {
     await generateLinks(req, res)
-  } else if (req.method === 'GET' && req.url.startsWith('/api/record/download')) {
+  } else if (req.method === 'GET' && req.url.startsWith('/download')) {
     await downloadRecord(req, res)
-  } else if (req.method === 'GET') {
-    try {
-      const records = (await Record.find()) || []
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify(records))
-    } catch (err) {
-      res.writeHead(400, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: err.message }))
-    }
-  } else if (req.method === 'POST' && req.url === '/api/record/update') {
+  } else if (req.method === 'GET' && req.url === '/get') {
+    await getAllRecord(req, res)
+  } else if (req.method === 'POST' && req.url === '/update') {
     await updateRecord(req, res)
-  } else if (req.method === 'POST' && req.url === '/api/record/delete') {
+  } else if (req.method === 'POST' && req.url === '/delete') {
     await deleteRecord(req, res)
   } else {
     next()
