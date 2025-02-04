@@ -25,20 +25,22 @@
     </a-card>
 
     <a-card title="历史记录" style="margin-top: 16px">
-      <a-table :columns="columns" :data-source="historyData" :pagination="false">
-        <template #cell="{ column, record }">
-          {{ column }}
+      <a-table :columns="columns" :data-source="historyData" :pagination="false" :rowKey="record => record.id">
+        <template v-slot:bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
             <a-tag :color="record.status === '已使用' ? 'green' : 'red'">
               {{ record.status }}
             </a-tag>
           </template>
-          <template v-if="column.key === 'audioLink'">
+          <template v-else-if="column.key === 'audioLink'">
             <a :href="record.audioLink" target="_blank">查看录音</a>
           </template>
-          <template v-if="column.key === 'actions'">
+          <template v-else-if="column.key === 'actions'">
             <a-button type="primary" @click="downloadAudio(record.audioLink)" style="margin-right: 8px">下载</a-button>
             <a-button type="danger" @click="deleteItem(record.index, historyData)">删除</a-button>
+          </template>
+          <template v-else>
+            {{ record[column.key] }}
           </template>
         </template>
       </a-table>
