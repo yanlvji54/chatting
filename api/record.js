@@ -250,6 +250,8 @@ module.exports = async (req, res, next) => {
     await downloadRecord(req, res)
   } else if (req.method === 'GET' && req.url === '/get') {
     await getAllRecord(req, res)
+  } else if (req.method === 'GET' && req.url === '/getRecord') {
+    await getRecord(req, res)
   } else if (req.method === 'POST' && req.url === '/update') {
     await updateRecord(req, res)
   } else if (req.method === 'POST' && req.url === '/delete') {
