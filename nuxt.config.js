@@ -46,10 +46,6 @@ export default {
   server: {
     port: 3001, // Change this to your desired port number
     host: '0.0.0.0', // Default: localhost
-    https: {
-      key: fs.readFileSync('./certs/privkey.pem'),
-      cert: fs.readFileSync('./certs/fullchain.pem')
-    }
   },
 
   router: {
