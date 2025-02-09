@@ -1,3 +1,5 @@
+import fs from 'fs';
+
 export default {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
@@ -44,6 +46,10 @@ export default {
   server: {
     port: 3001, // Change this to your desired port number
     host: '0.0.0.0', // Default: localhost
+    https: {
+      key: fs.readFileSync('./certs/privkey.pem'),
+      cert: fs.readFileSync('./certs/fullchain.pem')
+    }
   },
 
   router: {

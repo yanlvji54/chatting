@@ -248,7 +248,7 @@ module.exports = async (req, res, next) => {
 
   // Use CORS middleware
   const corsOptions = {
-    origin: 'http://example.com', // Replace with your allowed origin
+    origin: '*', // Allow all origins for development
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204
