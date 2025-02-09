@@ -81,7 +81,7 @@ async function generateLinks(req, res) {
     const roomId = crypto.randomBytes(8).toString('hex')
 
     // Generate user link using roomId
-    const userLink = `http://example.com/user/?roomId=${roomId}&customer=1`
+    const userLink = `http://https://118.25.132.79/?roomId=${roomId}&customer=1`
 
     // Find available listeners (using placeholder data)
     const listeners = [{
@@ -105,7 +105,7 @@ async function generateLinks(req, res) {
     const listenerId = listener.id
 
     // Generate listener link using roomId
-    const listenerLink = `http://example.com/listener/?roomId=${roomId}&listener=${listenerId}&customer=0`
+    const listenerLink = `http://example.com/listener/?roomId=${roomId}&listener=${listenerId}&master=1`
 
     // Create a new record
     const newRecord = new Record({
