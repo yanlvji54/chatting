@@ -39,5 +39,10 @@ export default {
     { path: '/api/user', handler: '~/api/user.js' }, // 自定义 User 路由
     { path: '/api/record', handler: '~/api/record.js' }, // 自定义 record 路由
     { path: '/api/download', handler: '~/api/download.js' } // 自定义 download 路由
-  ]
+  ],
+
+  // server: {
+  //   port: 3001, // Change this to your desired port number
+  //   host: '0.0.0.0' // Default: localhost
+  // }
 }

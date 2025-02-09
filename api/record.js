@@ -1,7 +1,22 @@
 const crypto = require('crypto')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
 
 // 对话框记录的增删改查
 const Record = require('../server/models/Record.js')
+
+// Set up multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/') // Ensure this directory exists
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`)
+  }
+})
+
+const upload = multer({ storage: storage })
 
 async function addRecord(req, res) {
   try {
@@ -31,7 +46,7 @@ async function updateRecord(req, res) {
 async function deleteRecord(req, res) {
   try {
     const { id } = req.body
-    await Record.findByIdAndDelete(id)
+    await Record.findOneAndDelete({ id })
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ message: 'Record deleted' }))
   } catch (err) {
@@ -59,39 +74,67 @@ async function downloadRecord(req, res) {
 
 async function generateLinks(req, res) {
   try {
-    const { userId, listenerId } = req.body
+    const { userId, startTime, endTime } = req.body
 
-    // 生成随机8位哈希
-    const randomHash = crypto.randomBytes(4).toString('hex')
+    // Generate a random room ID
+    const roomId = crypto.randomBytes(8).toString('hex')
 
-    // 生成用户链接
-    const userLinkHash = crypto.createHash('md5').update(`user-${randomHash}`).digest('hex').slice(0, 8)
-    const userLink = `http://example.com/user/${userLinkHash}`
+    // Generate user link using roomId
+    const userLink = `http://example.com/user/?roomId=${roomId}&customer=1`
 
-    // 生成专家链接
-    const listenerLinkHash = crypto.createHash('md5').update(`listener-${randomHash}`).digest('hex').slice(0, 8)
-    const listenerLink = `http://example.com/listener/${listenerLinkHash}`
+    // Find available listeners (using placeholder data)
+    const listeners = [{
+      id: '123',
+      name: '可可'
+    }, {
+      id: '456',
+      name: '小明'
+    }, {
+      id: '789',
+      name: '小红'
+    }, {
+      id: '101',
+      name: '阿泽'
+    }, {
+      id: '102',
+      name: '贝贝'
+    }]
+    
+    const listener = listeners[Math.floor(Math.random() * listeners.length)]
+    const listenerId = listener.id
 
-    // 创建新的记录
+    // Generate listener link using roomId
+    const listenerLink = `http://example.com/listener/?roomId=${roomId}&listener=${listenerId}&customer=0`
+
+    // Create a new record
     const newRecord = new Record({
-      id: randomHash,
+      id: roomId, // Use roomId as the record ID
       userId: userId,
       content: '',
       createdAt: new Date(),
       userLink: userLink,
-      listenerName: '',
-      listenerId: listenerId,
+      listenerName: listener.name,
+      listenerId,
       listenerLink: listenerLink,
-      startTime: '',
-      endTime: '',
+      startTime: startTime,
+      endTime: endTime,
       duration: '',
       status: '未使用'
     })
     await newRecord.save()
 
-    // 返回生成的链接
+    // Return the generated links and record ID
     res.writeHead(201, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ message: 'Links generated', userLink, listenerLink }))
+    res.end(JSON.stringify({ 
+      message: 'Links generated', 
+      userLink, 
+      listenerLink,
+      listenerId,
+      startTime,
+      endTime,
+      actualEndTime: '',
+      id: roomId // Include the room ID in the response
+    }))
   } catch (err) {
     res.writeHead(400, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ error: err.message }))
@@ -111,14 +154,90 @@ async function getRecord(req, res) {
 }
 
 async function getAllRecord(req, res) {
-  console.log('getAllRecord')
   try {
     const records = await Record.find()
     res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ message: 'Records fetched', data: records }))
+    res.end(JSON.stringify({ message: 'Records fetched', data: records.reverse() }))
   } catch (err) {
     res.writeHead(400, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ error: err.message }))
+  }
+}
+
+// Upload audio recording
+async function uploadRecording(req, res) {
+  try {
+    const { id } = req.body
+    const file = req.file
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' })
+    }
+
+    // Update the record with the file path
+    const updatedRecord = await Record.findByIdAndUpdate(id, { recordingPath: file.path }, { new: true })
+
+    res.status(200).json({ message: 'Recording uploaded', record: updatedRecord })
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+}
+
+// Download audio recording
+async function downloadRecording(req, res) {
+  try {
+    const { id } = req.query
+    const record = await Record.findById(id)
+
+    if (!record || !record.recordingPath) {
+      return res.status(404).json({ error: 'Recording not found' })
+    }
+
+    res.download(record.recordingPath)
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+}
+
+async function updateActualEndTime(req, res) {
+  try {
+    const { id, actualEndTime } = req.body;
+    
+    // Update the record with the actual end time
+    const updatedRecord = await Record.findByIdAndUpdate(
+      id, 
+      { actualEndTime }, 
+      { new: true }
+    );
+
+    if (!updatedRecord) {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+
+    res.status(200).json({ message: 'Actual end time updated', record: updatedRecord });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
+async function updateStatus(req, res) {
+  try {
+    const { id, status } = req.body;
+    
+    // Update the record with the new status
+    const updatedRecord = await Record.findByIdAndUpdate(
+      id, 
+      { status }, 
+      { new: true }
+    );
+
+    if (!updatedRecord) {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+
+    res.status(200).json({ message: 'Status updated', record: updatedRecord });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 }
 
@@ -136,6 +255,19 @@ module.exports = async (req, res, next) => {
     await updateRecord(req, res)
   } else if (req.method === 'POST' && req.url === '/delete') {
     await deleteRecord(req, res)
+  } else if (req.method === 'POST' && req.url === '/uploadRecording') {
+    upload.single('recording')(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ error: err.message })
+      }
+      await uploadRecording(req, res)
+    })
+  } else if (req.method === 'GET' && req.url.startsWith('/downloadRecording')) {
+    await downloadRecording(req, res)
+  } else if (req.method === 'POST' && req.url === '/updateActualEndTime') {
+    await updateActualEndTime(req, res)
+  } else if (req.method === 'POST' && req.url === '/updateStatus') {
+    await updateStatus(req, res)
   } else {
     next()
   }

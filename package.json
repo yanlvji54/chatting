@@ -15,6 +15,7 @@
     "dayjs": "^1.11.13",
     "mongoose": "^5.13.0",
     "nuxt": "^2.15.8",
+    "soundtouchjs": "^0.1.30",
     "vue": "^2.7.10",
     "vue-server-renderer": "^2.7.10",
     "vue-template-compiler": "^2.7.10"
