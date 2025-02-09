@@ -41,8 +41,8 @@ export default {
     { path: '/api/download', handler: '~/api/download.js' } // 自定义 download 路由
   ],
 
-  // server: {
-  //   port: 3001, // Change this to your desired port number
-  //   host: '0.0.0.0' // Default: localhost
-  // }
+  server: {
+    port: 3001, // Change this to your desired port number
+    host: '0.0.0.0' // Default: localhost
+  }  
 }

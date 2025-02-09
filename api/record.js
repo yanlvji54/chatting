@@ -2,7 +2,7 @@ const crypto = require('crypto')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
-
+console.log('record.js')
 // 对话框记录的增删改查
 const Record = require('../server/models/Record.js')
 
@@ -242,7 +242,6 @@ async function updateStatus(req, res) {
 }
 
 module.exports = async (req, res, next) => {
-  console.log(req.url, req.method)
   if (req.method === 'POST' && req.url === '/add') {
     await addRecord(req, res)
   } else if (req.method === 'POST' && req.url === '/generateLinks') {
