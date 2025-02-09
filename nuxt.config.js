@@ -43,7 +43,7 @@ export default {
 
   server: {
     port: 3001, // Change this to your desired port number
-    host: '0.0.0.0' // Default: localhost
+    host: '0.0.0.0', // Default: localhost
   },
 
   router: {

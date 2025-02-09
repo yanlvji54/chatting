@@ -223,7 +223,8 @@ export default {
           userId: '123', 
           listenerId: '456',
           startTime: startTimeStr,
-          endTime: endTimeStr
+          endTime: endTimeStr,
+          duration: duration.value
         })
       })
       const data = await res.json()

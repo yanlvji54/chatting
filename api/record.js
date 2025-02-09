@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
+const cors = require('cors')
 console.log('record.js')
 // 对话框记录的增删改查
 const Record = require('../server/models/Record.js')
@@ -74,7 +75,7 @@ async function downloadRecord(req, res) {
 
 async function generateLinks(req, res) {
   try {
-    const { userId, startTime, endTime } = req.body
+    const { userId, startTime, endTime, duration } = req.body
 
     // Generate a random room ID
     const roomId = crypto.randomBytes(8).toString('hex')
@@ -118,7 +119,7 @@ async function generateLinks(req, res) {
       listenerLink: listenerLink,
       startTime: startTime,
       endTime: endTime,
-      duration: '',
+      duration: duration,
       status: '未使用'
     })
     await newRecord.save()
@@ -144,6 +145,7 @@ async function generateLinks(req, res) {
 async function getRecord(req, res) {
   try {
     const { id } = req.query
+    console.log('getRecord', id)
     const record = await Record.findById(id)
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(record))
@@ -242,34 +244,45 @@ async function updateStatus(req, res) {
 }
 
 module.exports = async (req, res, next) => {
-  if (req.method === 'POST' && req.url === '/add') {
-    await addRecord(req, res)
-  } else if (req.method === 'POST' && req.url === '/generateLinks') {
-    await generateLinks(req, res)
-  } else if (req.method === 'GET' && req.url.startsWith('/download')) {
-    await downloadRecord(req, res)
-  } else if (req.method === 'GET' && req.url === '/get') {
-    await getAllRecord(req, res)
-  } else if (req.method === 'GET' && req.url === '/getRecord') {
-    await getRecord(req, res)
-  } else if (req.method === 'POST' && req.url === '/update') {
-    await updateRecord(req, res)
-  } else if (req.method === 'POST' && req.url === '/delete') {
-    await deleteRecord(req, res)
-  } else if (req.method === 'POST' && req.url === '/uploadRecording') {
-    upload.single('recording')(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ error: err.message })
-      }
-      await uploadRecording(req, res)
-    })
-  } else if (req.method === 'GET' && req.url.startsWith('/downloadRecording')) {
-    await downloadRecording(req, res)
-  } else if (req.method === 'POST' && req.url === '/updateActualEndTime') {
-    await updateActualEndTime(req, res)
-  } else if (req.method === 'POST' && req.url === '/updateStatus') {
-    await updateStatus(req, res)
-  } else {
-    next()
+  console.log('record.js', req.method, req.url)
+
+  // Use CORS middleware
+  const corsOptions = {
+    origin: 'http://example.com', // Replace with your allowed origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
   }
+  cors(corsOptions)(req, res, async () => {
+    if (req.method === 'POST' && req.url === '/add') {
+      await addRecord(req, res)
+    } else if (req.method === 'POST' && req.url === '/generateLinks') {
+      await generateLinks(req, res)
+    } else if (req.method === 'GET' && req.url.startsWith('/download')) {
+      await downloadRecord(req, res)
+    } else if (req.method === 'GET' && req.url === '/get') {
+      await getAllRecord(req, res)
+    } else if (req.method === 'POST' && req.url === '/getRecord') {
+      await getRecord(req, res)
+    } else if (req.method === 'POST' && req.url === '/update') {
+      await updateRecord(req, res)
+    } else if (req.method === 'POST' && req.url === '/delete') {
+      await deleteRecord(req, res)
+    } else if (req.method === 'POST' && req.url === '/uploadRecording') {
+      upload.single('recording')(req, res, async (err) => {
+        if (err) {
+          return res.status(400).json({ error: err.message })
+        }
+        await uploadRecording(req, res)
+      })
+    } else if (req.method === 'GET' && req.url.startsWith('/downloadRecording')) {
+      await downloadRecording(req, res)
+    } else if (req.method === 'POST' && req.url === '/updateActualEndTime') {
+      await updateActualEndTime(req, res)
+    } else if (req.method === 'POST' && req.url === '/updateStatus') {
+      await updateStatus(req, res)
+    } else {
+      next()
+    }
+  })
 }
