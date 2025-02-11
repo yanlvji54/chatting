@@ -144,14 +144,13 @@ async function generateLinks(req, res) {
 
 async function getRecord(req, res) {
   try {
-    const { id } = req.query
-    console.log('getRecord', id)
-    const record = await Record.findById(id)
+    const { id } = req.body
+    const record = await Record.find({id})
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(record))
   } catch (err) {
     res.writeHead(400, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ error: err.message }))
+    res.end(JSON.stringify({ error: err.message, record: [] }))
   }
 }
 
