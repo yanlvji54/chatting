@@ -3,9 +3,12 @@ const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
 const cors = require('cors')
-console.log('record.js')
+const mongoose = require('mongoose')
 // 对话框记录的增删改查
 const Record = require('../server/models/Record.js')
+
+// 设置 Mongoose 选项
+mongoose.set('useFindAndModify', false)
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
@@ -34,8 +37,33 @@ async function addRecord(req, res) {
 
 async function updateRecord(req, res) {
   try {
-    const { id, userId, content } = req.body
-    const updatedRecord = await Record.findByIdAndUpdate(id, { userId, content }, { new: true })
+    const { userId, content, userLink, listenerName, listenerId, listenerLink, startTime, endTime, duration, status, id } = req.body
+    if (!id) {
+      return res.status(400).json({ error: 'id is required' })
+    }
+    const record = await Record.findOne({id})
+    if (!record) {
+      return res.status(400).json({ error: 'Record not found' })
+    }
+    // userId, content, userLink, listenerName, listenerId, listenerLink, startTime, endTime, duration, status 如果哪个数据有值，就更新哪个数据
+    const updateData = {}
+    if (userId) updateData.userId = userId
+    if (content) updateData.content = content
+    if (userLink) updateData.userLink = userLink
+    if (listenerName) updateData.listenerName = listenerName
+    if (listenerId) updateData.listenerId = listenerId
+    if (listenerLink) updateData.listenerLink = listenerLink
+    if (startTime) updateData.startTime = startTime
+    if (endTime) updateData.endTime = endTime
+    if (duration) updateData.duration = duration
+    if (status) updateData.status = status
+    
+    const updatedRecord = await Record.findOneAndUpdate(
+      { id: id },
+      updateData,
+      { new: true }
+    )
+    
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ message: 'Record updated', record: updatedRecord }))
   } catch (err) {
