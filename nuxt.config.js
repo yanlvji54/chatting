@@ -49,6 +49,6 @@ export default {
   },
 
   router: {
-    base: ''
+    base: '/dashboard/'
   }
 }

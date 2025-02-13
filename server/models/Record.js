@@ -13,7 +13,8 @@ const RecordSchema = new mongoose.Schema({
   endTime: String,
   duration: String,
   status: String,
-  id: String
+  id: String,
+  masterConnected: Boolean
 })
 
 const Record = mongoose.model('Record', RecordSchema)

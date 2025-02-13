@@ -89,7 +89,11 @@
         <a-card title="历史记录">
           <a-table :columns="columns" :data-source="historyData" :pagination="false" :rowKey="record => record.id">
               <span slot="status" slot-scope="text, record">
-                <a-tag :color="record.status === '已使用' ? 'green' : 'red'">
+                <a-tag :color="{
+                  '已完成': 'green',
+                  '未使用': 'red',
+                  '使用中': 'blue'
+                }[record.status]">
                   {{ record.status }}
                 </a-tag>
               </span>

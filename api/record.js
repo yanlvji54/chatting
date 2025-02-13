@@ -57,6 +57,7 @@ async function updateRecord(req, res) {
     if (endTime) updateData.endTime = endTime
     if (duration) updateData.duration = duration
     if (status) updateData.status = status
+    if (masterConnected) updateData.masterConnected = masterConnected
     
     const updatedRecord = await Record.findOneAndUpdate(
       { id: id },
